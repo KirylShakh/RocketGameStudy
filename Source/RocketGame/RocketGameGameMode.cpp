@@ -11,18 +11,22 @@
 
 void ARocketGameGameMode::CreateInitialTiles()
 {
-	for (int i = 0; i < NumInitialTiles; i++)
+	AddTile(false); // first tile is without placebles
+	for (int i = 1; i < NumInitialTiles; i++)
 	{
 		AddTile();
 	}
 }
 
-void ARocketGameGameMode::AddTile()
+void ARocketGameGameMode::AddTile(bool bPlacePlacebles)
 {
 	ATile* Tile = GetWorld()->SpawnActor<ATile>(TileClass, NextSpawnPoint);
 	if (Tile)
 	{
-		PlacePlacebles(Tile);
+		if (bPlacePlacebles)
+		{
+			PlacePlacebles(Tile);
+		}
 
 		NextSpawnPoint = FTransform(FVector(0.f, NextSpawnPoint.GetTranslation().Y - TileWidth, 0.f));
 		Tile->TileToDestroyAfterTrigger = LastAddedTile;
@@ -41,13 +45,28 @@ void ARocketGameGameMode::PlacePlacebles(ATile* Tile)
 {
 	TArray<TArray<FVector>> PotentialSpawnPoints = FindPotentialSpawnPoints();
 
+	float LowestObstacleRowIndex = PotentialSpawnPoints.Num() / 2;
 	int32 NumObstacles = FMath::FloorToInt(FMath::FRandRange(0.f, MaxObstaclesPerTile));
 	for (int32 i = 0; i < NumObstacles; i++)
 	{
-		int32 Row = FMath::FloorToInt(FMath::FRandRange(0.f, (float)PotentialSpawnPoints.Num() - .6f));
+		int32 Row = FMath::FloorToInt(FMath::FRandRange(LowestObstacleRowIndex, (float)PotentialSpawnPoints.Num() - .6f));
 		int32 Column = FMath::FloorToInt(FMath::FRandRange(0.f, (float)PotentialSpawnPoints[Row].Num() - .6f));
 		Tile->AddPlaceble(CreateObstacle(PotentialSpawnPoints[Row][Column]));
 		
+		PotentialSpawnPoints[Row].RemoveAt(Column);
+		if (PotentialSpawnPoints[Row].Num() == 0)
+		{
+			PotentialSpawnPoints.RemoveAt(Row);
+		}
+	}
+
+	int32 NumBuildings = FMath::FloorToInt(FMath::FRandRange(0.f, MaxBuildingsPerTile));
+	for (int32 i = 0; i < NumBuildings; i++)
+	{
+		int32 Row = 0;
+		int32 Column = FMath::FloorToInt(FMath::FRandRange(0.f, (float)PotentialSpawnPoints[Row].Num() - .6f));
+		Tile->AddPlaceble(CreateBuilding(PotentialSpawnPoints[Row][Column]));
+
 		PotentialSpawnPoints[Row].RemoveAt(Column);
 		if (PotentialSpawnPoints[Row].Num() == 0)
 		{
@@ -109,6 +128,15 @@ AObstacle* ARocketGameGameMode::CreateObstacle(FVector Location)
 
 	const FTransform SpawnTransform = FTransform(Location);
 	return GetWorld()->SpawnActor<AObstacle>(ObstacleClass, SpawnTransform, SpawnParameters);
+}
+
+AObstacle* ARocketGameGameMode::CreateBuilding(FVector Location)
+{
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	const FTransform SpawnTransform = FTransform(FVector(Location.X, Location.Y, Location.Z + BuildingZOffset));
+	return GetWorld()->SpawnActor<AObstacle>(BuildingClass, SpawnTransform, SpawnParameters);
 }
 
 TArray<TArray<FVector>> ARocketGameGameMode::FindPotentialSpawnPoints()

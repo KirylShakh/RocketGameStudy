@@ -31,7 +31,7 @@ public:
 
 	void CreateInitialTiles();
 
-	void AddTile();
+	void AddTile(bool = true);
 
 	UPROPERTY(EditAnywhere, Category = "Config")
 	float DownBorder = 25.f;
@@ -49,7 +49,13 @@ public:
 	TSubclassOf<AObstacle> ObstacleClass;
 
 	UPROPERTY(EditAnywhere, Category = "Config")
+	TSubclassOf<AObstacle> BuildingClass;
+
+	UPROPERTY(EditAnywhere, Category = "Config")
 	float PlacebleSide = 100.f;
+
+	UPROPERTY(EditAnywhere, Category = "Config")
+	float BuildingZOffset = 125.f;
 
 	UPROPERTY(EditAnywhere, Category = "Config")
 	int32 MaxRocketsPerTile = 15;
@@ -59,6 +65,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Config")
 	int32 MaxObstaclesPerTile = 20;
+
+	UPROPERTY(EditAnywhere, Category = "Config")
+	int32 MaxBuildingsPerTile = 1;
 
 protected:
 	virtual void BeginPlay() override;
@@ -70,6 +79,7 @@ protected:
 	ARocket* CreateRocket(FVector Location);
 	AMedicine* CreateMedicine(FVector Location);
 	AObstacle* CreateObstacle(FVector Location);
+	AObstacle* CreateBuilding(FVector Location);
 
 	TArray<TArray<FVector>> FindPotentialSpawnPoints();
 };

@@ -21,7 +21,21 @@ public:
 	UPROPERTY(Category = "Components", EditAnywhere, BlueprintReadWrite)
 	class UStaticMeshComponent* Mesh;
 
+	UPROPERTY(Category = "Components", EditAnywhere, BlueprintReadWrite)
+	class UBoxComponent* LeftTriggerBox;
+
+	UPROPERTY(Category = "Components", EditAnywhere, BlueprintReadWrite)
+	class UBoxComponent* RightTriggerBox;
+
+	UPROPERTY(Category = "Components", EditAnywhere, BlueprintReadWrite)
+	class UBoxComponent* BottomTriggerBox;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintNativeEvent, Category = Collision)
+	void OnTrigger(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	void OnTrigger_Implementation(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 };

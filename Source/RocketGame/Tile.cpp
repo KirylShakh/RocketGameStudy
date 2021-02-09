@@ -33,19 +33,18 @@ void ATile::AddPlaceble(AActor* Placeble)
 }
 
 void ATile::DestroySelf()
-{	
-	for (int i = 0; i < Placebles.Num(); i++)
+{
+	int n = Placebles.Num();
+	for (int i = 0; i < n; i++)
 	{
 		if (Placebles[i])
 		{
 			Placebles[i]->Destroy();
 		}
 	}
-	Placebles.Empty();
 
 	Destroy();
 }
-
 
 // Called when the game starts or when spawned
 void ATile::BeginPlay()

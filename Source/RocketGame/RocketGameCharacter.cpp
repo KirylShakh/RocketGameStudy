@@ -7,6 +7,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+
 ARocketGameCharacter::ARocketGameCharacter()
 {
 	// Set size for collision capsule
@@ -60,28 +61,73 @@ void ARocketGameCharacter::BeginPlay()
 void ARocketGameCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// set up gameplay key bindings
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-	PlayerInputComponent->BindAxis("MoveRight", this, &ARocketGameCharacter::MoveRight);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ARocketGameCharacter::LaunchRocket);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ARocketGameCharacter::LaunchRocketReleased);
 
 	PlayerInputComponent->BindTouch(IE_Pressed, this, &ARocketGameCharacter::TouchStarted);
 	PlayerInputComponent->BindTouch(IE_Released, this, &ARocketGameCharacter::TouchStopped);
 }
 
-void ARocketGameCharacter::MoveRight(float Value)
+void ARocketGameCharacter::LaunchRocket()
 {
-	// add movement in that direction
-	AddMovementInput(FVector(0.f,-1.f,0.f), Value);
+	bTapActive = true;
+	if (TapTimerHandle.IsValid())
+	{
+		GetWorldTimerManager().ClearTimer(TapTimerHandle);
+	}
+	GetWorldTimerManager().SetTimer(TapTimerHandle, this, &ARocketGameCharacter::OnTapTimerTick, CorrectionTickDuration, true);
+
+	if (!GetMovementComponent()->IsFalling())
+	{
+		LaunchCharacter(FVector(0, ImpulseY, ImpulseZ), false, false);
+		Rockets--;
+		Health--;
+	}
+}
+
+void ARocketGameCharacter::LaunchRocketReleased()
+{
+	bTapActive = false;
+	if (TapTimerHandle.IsValid())
+	{
+		GetWorldTimerManager().ClearTimer(TapTimerHandle);
+	}
 }
 
 void ARocketGameCharacter::TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location)
 {
-	// jump on any touch
-	Jump();
+	LaunchRocket();
 }
 
 void ARocketGameCharacter::TouchStopped(const ETouchIndex::Type FingerIndex, const FVector Location)
 {
-	StopJumping();
+	LaunchRocketReleased();
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Movement Logic
+
+void ARocketGameCharacter::OnTapTimerTick()
+{
+	if (bTapActive && GetMovementComponent()->IsFalling())
+	{
+		LaunchCharacter(FVector(0.f, CorrectY, CorrectZ), false, false);
+	}
+}
+
+void ARocketGameCharacter::Die()
+{
+	DisableInput(Cast<APlayerController>(GetController()));
+	OnCrash();
+}
+
+void ARocketGameCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	if (Rockets <= 0 || Health <= 0)
+	{
+		Die();
+	}
 }
 
